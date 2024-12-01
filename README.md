@@ -6,10 +6,10 @@ To install dependencies:
 bun install
 ```
 
-To run:
+To run, for example, day 1 part 1:
 
 ```bash
-bun run start
+bun run day-1/part-1/index.ts
 ```
 
 Files in `input/` will be run through the function in `index.ts` and then written to `output/`.
