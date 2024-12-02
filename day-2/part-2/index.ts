@@ -31,7 +31,7 @@ function isReportSafe(report: number[]) {
 // Generates every possible report with one level removed
 function * reportsWithLevelRemoved<T>(report: T[]): Generator<T[]> {
 	for (let i = 0; i < report.length; i++) {
-		yield [...report.slice(0, i), ...report.slice(i + 1, report.length)];
+		yield report.toSpliced(i, 1);
 	}
 }
 
