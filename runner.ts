@@ -3,7 +3,8 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-export type RunnerFunction = (...input: string[]) => string | Promise<string>;
+export type RunnerReturn = string | number;
+export type RunnerFunction = (...input: string[]) => RunnerReturn | Promise<RunnerReturn>;
 
 const BASE_DIR = path.dirname(Bun.main);
 const INPUT_DIR = path.join(BASE_DIR, "input/");
@@ -52,10 +53,12 @@ export async function runner(func: RunnerFunction) {
 
 		// This API has only existed for a week right now,
 		// it's not typed in ESNext but it's there.
-		const process = Promise.try(func, inputData) as Promise<string>;
+		const process = Promise.try(func, inputData) as Promise<RunnerReturn>;
 
 		return process
-			.then(async (output: string) => {
+			.then(async (output: RunnerReturn) => {
+				output = output.toString();
+
 				// If the runner function returns...
 				return Promise.all([
 					// Write output to file
