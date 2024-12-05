@@ -39,7 +39,9 @@ export async function runner(func: RunnerFunction) {
 
 		// 2. Check for the existence of a check file, and read it if it exists
 		//    This happens in parallel to the input file getting read
-		const checkDataPromise = fs.exists(checkFilepath)
+		const checkDataPromise = fs.access(checkFilepath)
+			.then(() => true)
+			.catch(() => false)
 			.then(async (checkFileExists) => {
 				if (!checkFileExists) {
 					return null;
