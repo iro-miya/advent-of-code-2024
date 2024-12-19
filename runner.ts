@@ -21,6 +21,26 @@ const RESET_ANSI = DISABLE_COLORS ? "" : "\x1B[m";
 const OK_PREFIX = `[${GREEN_ANSI}OK${RESET_COLOR_ANSI}]`;
 const FAIL_PREFIX = `[${RED_ANSI}FAIL${RESET_COLOR_ANSI}]`;
 
+function formatTime(ns: number) {
+	if (ns < 1_000_000) {
+		return ns.toLocaleString("en") + " ns";
+	}
+
+	if (ns < 1_000_000_000) {
+		return (ns / 1_000_000).toFixed(3) + " ms";
+	}
+
+	if (ns <  60_000_000_000) {
+		return (ns / 1_000_000_000).toFixed(3) + " s";
+	}
+
+	if (ns < 3_600_000_000_000) {
+		return (ns /  60_000_000_000).toFixed(3) + " min";
+	}
+
+	return (ns / 3_600_000_000_000).toFixed(3) + " h";
+}
+
  
 export async function runner(func: RunnerFunction) {
 	const files = await fs.readdir(INPUT_DIR);
@@ -53,9 +73,13 @@ export async function runner(func: RunnerFunction) {
 		// 3. Read the input file and process it
 		const inputData = await Bun.file(inputFilepath).text();
 
+		const startTime = Bun.nanoseconds();
+
 		// This API has only existed for a week right now,
 		// it's not typed in ESNext but it's there.
 		const process = Promise.try(func, inputData, file) as Promise<RunnerReturn>;
+
+		const elapsed = Bun.nanoseconds() - startTime;
 
 		return process
 			.then(async (output: RunnerReturn) => {
@@ -68,17 +92,24 @@ export async function runner(func: RunnerFunction) {
 
 					// Compare with the check file if it exists
 					checkDataPromise.then(async (checkData) => {
+						const formatted = formatTime(elapsed);
 						if (checkData == null) {
-							console.log(`${OK_PREFIX} ${file} was processed.`);
+							console.log(`${OK_PREFIX} ${file} was processed. This took ${formatted}.`);
 							return true;
 						}
 
-						if (checkData.trim() == output.trim()) {
-							console.log(`${OK_PREFIX} ${file} was processed and matched check.`);
+						const checkTrim = checkData.trim();
+						const outputTrim = output.trim();
+						if (checkData.trim() === output.trim()) {
+							console.log(`${OK_PREFIX} ${file} was processed and matched check. This took ${formatted}.`);
 							return true;
 						}
 
-						console.log(`${FAIL_PREFIX} ${file} was processed and did not match check.`);
+						console.log(`${FAIL_PREFIX} ${file} was processed and did not match check. This took ${formatted}.`);
+
+						if (checkTrim.length < 10 && outputTrim.length < 10 && !checkTrim.includes("\n") && !outputTrim.includes("\n")) {
+							console.log(`        Expected: ${checkTrim}    Got: ${outputTrim}`);
+						}
 						return false;
 					}),
 				]).then(([, result]) => result);
